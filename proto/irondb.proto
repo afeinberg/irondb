@@ -2,8 +2,28 @@ syntax = "proto3";
 package irondb;
 
 service Irondb {
-	// Trivial healthcheck?
+	rpc Get (GetRequest) returns (GetReply);
+	rpc Put (PutRequest) returns (PutReply);
 	rpc AreYouOkay (AreYouOkayRequest) returns (AreYouOkayReply);
+}
+
+message GetRequest {
+	string key = 1;
+}
+
+message GetReply {
+	string value = 1;
+}
+
+message PutRequest {
+	string key = 1;
+	string value = 2;
+	repeated ClockEntry version = 3;
+}
+
+message PutReply {
+	string key = 1;
+	string previous = 2;
 }
 
 message AreYouOkayRequest {
@@ -12,4 +32,9 @@ message AreYouOkayRequest {
 
 message AreYouOkayReply {
 	string message = 1;
+}
+
+message ClockEntry {
+	int32 node_id = 1;
+	int64 timestamp = 2;
 }

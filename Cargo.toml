@@ -3,7 +3,9 @@ name = "irondb"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "irondb"
+path = "src/lib.rs"
 
 [[bin]]
 name = "irondb-server"
@@ -14,7 +16,10 @@ name = "irondb-client"
 path = "src/client.rs"
 
 [dependencies]
-#clap = "2.34.0"
+im = "15.0.0"
+log = "0.4"
+config = "0.11"
+clap = "2.34.0"
 tonic = "0.6"
 prost = "0.9"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

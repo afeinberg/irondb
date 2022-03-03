@@ -1,7 +1,7 @@
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status, transport::Server};
 
-use irondb::irondb_server::{Irondb, IrondbServer};
-use irondb::{AreYouOkayReply, AreYouOkayRequest};
+use crate::irondb::{AreYouOkayReply, AreYouOkayRequest};
+use crate::irondb::irondb_server::{Irondb, IrondbServer};
 
 pub mod irondb {
     tonic::include_proto!("irondb");
@@ -16,13 +16,18 @@ impl Irondb for MyIrondb {
         &self,
         request: Request<AreYouOkayRequest>,
     ) -> Result<Response<AreYouOkayReply>, Status> {
-        println!("Got a request: {:?}", request);
-
         let reply = irondb::AreYouOkayReply {
             message: format!("AreYouOkay {}!", request.into_inner().name).into(),
         };
 
         Ok(Response::new(reply))
+    }
+
+    async fn get(
+        &self,
+        request: Request<GetRequest>,
+    ) -> Result<Response<GetReply>, Status> {
+        todo!()
     }
 }
 

@@ -1,7 +1,7 @@
-use irondb::irondb_client::IrondbClient;
-use irondb::AreYouOkayRequest;
+use crate::irondb::AreYouOkayRequest;
+use crate::irondb::irondb_client::IrondbClient;
 
-pub mod irondb {
+pub(crate) mod irondb {
     tonic::include_proto!("irondb");
 }
 
