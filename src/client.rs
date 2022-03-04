@@ -1,4 +1,4 @@
-use crate::irondb::AreYouOkayRequest;
+use crate::irondb::{AreYouOkayRequest, GetRequest};
 use crate::irondb::irondb_client::IrondbClient;
 
 pub(crate) mod irondb {
@@ -9,11 +9,11 @@ pub(crate) mod irondb {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = IrondbClient::connect("http://[::1]:50051").await?;
 
-    let request = tonic::Request::new(AreYouOkayRequest {
-        name: "Tonic".into(),
+    let request = tonic::Request::new(GetRequest {
+        key: "путин".into(),
     });
 
-    let response = client.are_you_okay(request).await?;
+    let response = client.get(request).await?;
 
     println!("RESPONSE={:?}", response);
 

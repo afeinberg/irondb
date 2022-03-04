@@ -12,7 +12,11 @@ message GetRequest {
 }
 
 message GetReply {
-	string value = 1;
+	message Versioned {
+		string value = 1;
+		repeated ClockEntry version = 2;
+	}
+	repeated Versioned results = 3;
 }
 
 message PutRequest {

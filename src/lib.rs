@@ -1,6 +1,7 @@
 pub mod core;
-mod version;
-mod util;
+pub mod version;
+pub mod util;
+pub mod store;
 
 #[cfg(test)]
 mod tests {
@@ -9,6 +10,6 @@ mod tests {
     #[test]
     fn test_dflt_server_hostport() {
         let cfg = ClusterConfig::from("Cluster");
-        assert_eq!(cfg.dflt_server_hostport(), "[::1]:50051")
+        assert_eq!(cfg.dflt_server_hostport(), "[::1]:10081")
     }
 }

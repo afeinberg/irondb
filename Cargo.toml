@@ -8,7 +8,7 @@ name = "irondb"
 path = "src/lib.rs"
 
 [[bin]]
-name = "irondb-server"
+name = "irondb"
 path = "src/server.rs"
 
 [[bin]] 
