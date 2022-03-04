@@ -24,7 +24,7 @@ impl InMemoryStore<String, String> {
     pub fn new() -> Self {
         let mut storage_map:  HashMap<String, Vec<Versioned<String>>> = HashMap::new();
       
-        storage_map.insert("путин".to_string(),  vec![Versioned { version: VectorClock::default(), value: "путин".to_string() }]);
+        storage_map.insert("путин".to_string(),  vec![Versioned { version: VectorClock::default(), value: "хуйло".to_string() }]);
         InMemoryStore {
             storage_map,
         }
