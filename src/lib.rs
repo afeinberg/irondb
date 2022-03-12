@@ -1,7 +1,7 @@
 pub mod core;
-pub mod version;
-pub mod util;
 pub mod store;
+pub mod util;
+pub mod version;
 
 #[cfg(test)]
 mod tests {

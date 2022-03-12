@@ -1,4 +1,4 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn current_time_millis() -> u128 {
     SystemTime::now()
@@ -9,6 +9,8 @@ pub fn current_time_millis() -> u128 {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use super::*;
 
     #[test]

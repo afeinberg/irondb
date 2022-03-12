@@ -21,10 +21,7 @@ impl Default for VectorClock {
 
 impl VectorClock {
     pub fn incremented(&self, node: u16, by: u64, ts: u128) -> Self {
-        let new_value = self
-            .versions
-            .get(&node)
-            .map_or(by, |&old| old + by);
+        let new_value = self.versions.get(&node).map_or(by, |&old| old + by);
         VectorClock {
             versions: self.versions.update(node, new_value),
             ts,
@@ -72,7 +69,7 @@ impl<T> Versioned<T> {
     pub fn from(other: Versioned<T>) -> Self {
         Versioned {
             version: other.version,
-            value: other.value
+            value: other.value,
         }
     }
     pub fn with_version(version: VectorClock, value: T) -> Self {

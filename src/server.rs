@@ -1,24 +1,31 @@
 use std::sync::{Arc, Mutex};
-use tonic::{transport::Server, Request, Response, Status};
 
-use crate::irondbproto::irondb_server::{Irondb, IrondbServer};
-use crate::irondbproto::{
-    AreYouOkayReply, AreYouOkayRequest, ClockEntry, GetReply, GetRequest, PutReply, PutRequest,
-};
+use env_logger::Env;
+use log::info;
+use tonic::{Request, Response, Status, transport::Server};
+
+use irondb::core::ClusterConfig;
 use irondb::store::{InMemoryStore, Store};
 use irondb::version::{VectorClock, Versioned};
+
+use crate::irondbproto::{
+    AreYouOkayReply, AreYouOkayRequest, GetReply, GetRequest, PutReply, PutRequest,
+};
+use crate::irondbproto::irondb_server::{Irondb, IrondbServer};
 
 pub mod irondbproto {
     tonic::include_proto!("irondb");
 }
 
 #[derive(Debug)]
-pub struct IrondbImpl<T: Store<Key = String, Value = String, Error = Box<dyn std::error::Error>>> {
+pub struct IrondbImpl<T: Store<Key=String, Value=String, Error=Box<dyn std::error::Error>>> {
     store: Arc<Mutex<T>>,
 }
 
 impl Default for IrondbImpl<InMemoryStore<String, String>> {
     fn default() -> Self {
+        info!("Using InMemoryStore");
+
         IrondbImpl {
             store: Arc::new(Mutex::new(InMemoryStore::new())),
         }
@@ -26,10 +33,10 @@ impl Default for IrondbImpl<InMemoryStore<String, String>> {
 }
 
 #[tonic::async_trait]
-impl<T: Store<Key = String, Value = String, Error = Box<dyn std::error::Error>>> Irondb
-    for IrondbImpl<T>
-where
-    T: Sync + Send + 'static,
+impl<T: Store<Key=String, Value=String, Error=Box<dyn std::error::Error>>> Irondb
+for IrondbImpl<T>
+    where
+        T: Sync + Send + 'static,
 {
     async fn are_you_okay(
         &self,
@@ -45,7 +52,7 @@ where
     async fn get(&self, request: Request<GetRequest>) -> Result<Response<GetReply>, Status> {
         let lock_res = self.store.lock();
         let results: Vec<Versioned<String>> =
-            lock_res.unwrap().get(request.into_inner().key).unwrap();
+            lock_res.unwrap().get(request.into_inner().key).unwrap_or_default();
         let results = results
             .into_iter()
             .map(|ver_and_val| irondbproto::get_reply::Versioned {
@@ -62,7 +69,7 @@ where
         let lock_res = self.store.lock();
         let mut store = lock_res.unwrap();
         let inner = request.into_inner();
-        store
+        let old_values = store
             .put(
                 inner.key.clone(),
                 Versioned {
@@ -70,10 +77,13 @@ where
                     value: inner.value,
                 },
             )
-            .unwrap();
+            .map_or_else(|_| Vec::new(), |v| v);
+
         let reply = PutReply {
             key: inner.key,
-            previous: "".to_string(),
+            previous: old_values
+                .first()
+                .map_or_else(|| "".to_string(), |ver_and_val| ver_and_val.value.clone()),
         };
         Ok(Response::new(reply))
     }
@@ -81,7 +91,10 @@ where
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    let addr = ClusterConfig::from("Cluster")
+        .dflt_server_hostport()
+        .parse()?;
     let irondb = IrondbImpl::default();
 
     Server::builder()

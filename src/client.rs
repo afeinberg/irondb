@@ -1,4 +1,6 @@
-use crate::irondb::{AreYouOkayRequest, GetRequest};
+use ::irondb::core::ClusterConfig;
+
+use crate::irondb::{GetRequest, PutRequest};
 use crate::irondb::irondb_client::IrondbClient;
 
 pub(crate) mod irondb {
@@ -7,15 +9,24 @@ pub(crate) mod irondb {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = IrondbClient::connect("http://[::1]:50051").await?;
+    let addr = ClusterConfig::from("Cluster").dflt_server_hostport();
+    let mut client = IrondbClient::connect(format!("http://{}/", addr)).await?;
 
-    let request = tonic::Request::new(GetRequest {
-        key: "путин".into(),
+    let put_request = tonic::Request::new(PutRequest {
+        key: "harry".to_string(),
+        value: "potter".to_string(),
+        version: vec![],
+    });
+    let get_request = tonic::Request::new(GetRequest {
+        key: "harry".into(),
     });
 
-    let response = client.get(request).await?;
+    let response = client.get(get_request).await?;
 
-    println!("RESPONSE={:?}", response);
+    println!(
+        "put request({:?}), get response({:?})",
+        put_request, response
+    );
 
     Ok(())
 }
