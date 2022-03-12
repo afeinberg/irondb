@@ -1,21 +1,23 @@
 use std::sync::{Arc, Mutex};
-use tonic::{Request, Response, Status, transport::Server};
+use tonic::{transport::Server, Request, Response, Status};
 
-use crate::irondbproto::{AreYouOkayReply, AreYouOkayRequest, GetReply, GetRequest, PutReply, PutRequest, ClockEntry};
 use crate::irondbproto::irondb_server::{Irondb, IrondbServer};
-use irondb::version::Versioned;
-use irondb::store::{Store, InMemoryStore};
+use crate::irondbproto::{
+    AreYouOkayReply, AreYouOkayRequest, ClockEntry, GetReply, GetRequest, PutReply, PutRequest,
+};
+use irondb::store::{InMemoryStore, Store};
+use irondb::version::{VectorClock, Versioned};
 
 pub mod irondbproto {
     tonic::include_proto!("irondb");
 }
 
 #[derive(Debug)]
-pub struct IrondbImpl {
-   store: Arc<Mutex<InMemoryStore<String, String>>>
+pub struct IrondbImpl<T: Store<Key = String, Value = String, Error = Box<dyn std::error::Error>>> {
+    store: Arc<Mutex<T>>,
 }
 
-impl Default for IrondbImpl {
+impl Default for IrondbImpl<InMemoryStore<String, String>> {
     fn default() -> Self {
         IrondbImpl {
             store: Arc::new(Mutex::new(InMemoryStore::new())),
@@ -24,7 +26,11 @@ impl Default for IrondbImpl {
 }
 
 #[tonic::async_trait]
-impl Irondb for IrondbImpl {
+impl<T: Store<Key = String, Value = String, Error = Box<dyn std::error::Error>>> Irondb
+    for IrondbImpl<T>
+where
+    T: Sync + Send + 'static,
+{
     async fn are_you_okay(
         &self,
         request: Request<AreYouOkayRequest>,
@@ -36,26 +42,41 @@ impl Irondb for IrondbImpl {
         Ok(Response::new(reply))
     }
 
-    async fn get(
-        &self,
-        request: Request<GetRequest>,
-    ) -> Result<Response<GetReply>, Status> {
+    async fn get(&self, request: Request<GetRequest>) -> Result<Response<GetReply>, Status> {
         let lock_res = self.store.lock();
-        let results: Vec<Versioned<String>> = lock_res.unwrap().get(request.into_inner().key).unwrap();
-        let results = results.into_iter().map(|ver_and_val| {
-            irondbproto::get_reply::Versioned {
+        let results: Vec<Versioned<String>> =
+            lock_res.unwrap().get(request.into_inner().key).unwrap();
+        let results = results
+            .into_iter()
+            .map(|ver_and_val| irondbproto::get_reply::Versioned {
                 value: ver_and_val.value,
                 version: Vec::new(),
-            }
-        });
-        let reply = GetReply {results: results.collect() };
+            });
+        let reply = GetReply {
+            results: results.collect(),
+        };
         Ok(Response::new(reply))
     }
 
-    fn put< 'life0, 'async_trait>(& 'life0 self,request:tonic::Request<PutRequest> ,) ->  core::pin::Pin<Box<dyn core::future::Future<Output = Result<tonic::Response<PutReply> ,tonic::Status> > + core::marker::Send+ 'async_trait> >where 'life0: 'async_trait,Self: 'async_trait {
-        todo!()
+    async fn put(&self, request: Request<PutRequest>) -> Result<Response<PutReply>, Status> {
+        let lock_res = self.store.lock();
+        let mut store = lock_res.unwrap();
+        let inner = request.into_inner();
+        store
+            .put(
+                inner.key.clone(),
+                Versioned {
+                    version: VectorClock::default(),
+                    value: inner.value,
+                },
+            )
+            .unwrap();
+        let reply = PutReply {
+            key: inner.key,
+            previous: "".to_string(),
+        };
+        Ok(Response::new(reply))
     }
-
 }
 
 #[tokio::main]

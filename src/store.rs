@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use crate::version::{VectorClock, Versioned};
 
-pub trait Store: Clone + Sized {
+pub trait Store: Clone {
     type Key;
     type Value;
     type Error;
