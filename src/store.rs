@@ -37,7 +37,7 @@ impl InMemoryStore<String, String> {
 impl Store for InMemoryStore<String, String> {
     type Key = String;
     type Value = String;
-    type Error = Box<dyn std::error::Error>;
+    type Error = anyhow::Error;
 
     fn get(&self, key: Self::Key) -> Result<Vec<Versioned<Self::Value>>, Self::Error> {
         let value = self
@@ -56,12 +56,18 @@ impl Store for InMemoryStore<String, String> {
             .storage_map
             .get(&key)
             .map_or_else(|| Vec::new(), |v| v.clone());
-        let mut new_value = vec![value];
-
-        // TODO: Do vector clock comparison and conflict reconcilation.
-        let _old_version: Vec<VectorClock> = old_value.iter().map(|v| v.version.clone()).collect();
-        new_value.append(&mut old_value);
-        self.storage_map.insert(key, new_value);
-        Ok(old_value.clone())
+        let mut new_value = vec![value.clone()];
+        let old_versions: Vec<VectorClock> = old_value.iter().map(|v| v.version.clone()).collect();
+        let version_succ = old_versions.iter().cloned().find(|version| {
+            version > &value.version
+        });
+        match version_succ {
+            Some(ver) => anyhow::bail!("Version {:?} > {:?}", ver, value.version),
+            None => {
+                new_value.append(&mut old_value);
+                self.storage_map.insert(key, new_value);
+                Ok(old_value.clone())
+            }
+        }
     }
 }

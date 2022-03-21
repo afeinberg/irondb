@@ -1,3 +1,5 @@
+#![feature(assert_matches)]
+
 pub mod core;
 pub mod store;
 pub mod util;

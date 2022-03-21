@@ -1,3 +1,5 @@
+use std::assert_matches::*;
+
 use im::OrdMap;
 
 use crate::util;
@@ -40,12 +42,12 @@ impl VectorClock {
 
 impl PartialOrd for VectorClock {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.less_than(other) {
+        if other.versions == self.versions {
+            Some(std::cmp::Ordering::Equal)
+        } else if self.less_than(other) {
             Some(std::cmp::Ordering::Less)
         } else if other.less_than(self) {
             Some(std::cmp::Ordering::Greater)
-        } else if other.versions == self.versions {
-            Some(std::cmp::Ordering::Equal)
         } else {
             None
         }
@@ -78,5 +80,28 @@ impl<T> Versioned<T> {
 
     pub fn compare_versions(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.version.partial_cmp(&other.version)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cmp::Ordering;
+
+    use super::*;
+
+    #[test]
+    fn test_vector_clock() {
+        let a = VectorClock::default();
+        let b = VectorClock::default();
+        assert_matches!(a.partial_cmp(&b), Some(Ordering::Equal));
+        let b = b.incremented(0, 1, util::current_time_millis());
+        assert_matches!(a.partial_cmp(&b), Some(Ordering::Less));
+        assert_matches!(b.partial_cmp(&a), Some(Ordering::Greater));
+        let a = a.incremented(1, 1, util::current_time_millis());
+        assert_matches!(a.partial_cmp(&b), None);
+        let b = b.incremented(1, 1, util::current_time_millis());
+        let b = b.incremented(0, 1, util::current_time_millis());
+        let b = b.incremented(1, 1, util::current_time_millis());
+        assert_matches!(b.partial_cmp(&a), Some(Ordering::Greater));
     }
 }
