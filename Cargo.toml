@@ -1,23 +1,6 @@
-[package]
-name = "irondb"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
-name = "irondb-server"
-path = "src/server.rs"
-
-[[bin]] 
-name = "irondb-client"
-path = "src/client.rs"
-
-[dependencies]
-#clap = "2.34.0"
-tonic = "0.6"
-prost = "0.9"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-
-[build-dependencies]
-tonic-build = "0.6"
+[workspace]
+members = [
+	"protos",
+	"irondb",
+	"store"
+]

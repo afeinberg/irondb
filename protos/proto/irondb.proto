@@ -1,0 +1,38 @@
+syntax = "proto3";
+package irondb;
+
+service Irondb {
+	// Trivial healthcheck?
+	rpc AreYouOkay (AreYouOkayRequest) returns (AreYouOkayReply);
+}
+
+message AreYouOkayRequest {
+	string name = 1;
+}
+
+message AreYouOkayReply {
+	string message = 1;
+}
+
+message ClockEntry {
+	int32 node_id = 1;
+	int64 version = 2;
+}
+
+message VectorClock {
+	repeated ClockEntry entries = 1;
+	int32 timestamp = 2;
+}
+
+message Versioned {
+	bytes value = 1;
+	VectorClock version = 2;	
+}
+
+message GetRequest {
+	bytes key = 1;
+}
+
+message GetReply {
+	repeated Versioned versions = 1;
+}

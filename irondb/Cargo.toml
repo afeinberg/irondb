@@ -1,0 +1,19 @@
+[package]
+name = "irondb"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "irondb-server"
+path = "src/server.rs"
+
+[[bin]] 
+name = "irondb-client"
+path = "src/client.rs"
+
+[dependencies]
+protos = { path = "../protos" }
+tonic = "0.6"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
